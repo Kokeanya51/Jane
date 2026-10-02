@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tutorial Tracker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eef1f6; --surface:#ffffff; --ink:#1b2a41; --muted:#5d6b82; --line:#d6dce8;
+  --accent:#2f5bea; --accent-ink:#ffffff;
+  --present:#1f8a5b; --late:#b57f00; --absent:#c8432b;
+  --present-bg:#dff3e9; --late-bg:#fbefc9; --absent-bg:#f9e0da;
+  --head:'Bricolage Grotesque',system-ui,sans-serif; --body:'Figtree',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1624; --surface:#18233a; --ink:#e8edf7; --muted:#97a5bf; --line:#2a3956;
+    --accent:#6f90ff; --accent-ink:#0f1624;
+    --present:#4fd69a; --late:#f0c24a; --absent:#ff8a73;
+    --present-bg:#17382c; --late-bg:#3a3014; --absent-bg:#3f201b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1624; --surface:#18233a; --ink:#e8edf7; --muted:#97a5bf; --line:#2a3956;
+  --accent:#6f90ff; --accent-ink:#0f1624;
+  --present:#4fd69a; --late:#f0c24a; --absent:#ff8a73;
+  --present-bg:#17382c; --late-bg:#3a3014; --absent-bg:#3f201b;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 var(--body);}
+.wrap{max-width:880px;margin:0 auto;padding:16px 16px 48px}
+h1,h2,h3{font-family:var(--head);margin:0;letter-spacing:-.01em}
+h1{font-size:1.6rem}
+h2{font-size:1.2rem;margin-bottom:10px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0 14px}
+header p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+nav{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;overflow-x:auto}
+nav button{flex:1 0 auto;border:0;background:transparent;color:var(--muted);font:600 .92rem var(--body);padding:10px 14px;border-radius:9px;cursor:pointer;white-space:nowrap}
+nav button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+section.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+.row>label{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted);flex:1 1 130px}
+input,select,textarea{font:400 1rem var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 10px;width:100%}
+textarea{min-height:140px;font-family:ui-monospace,Menlo,monospace;font-size:.82rem}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 .92rem var(--body);padding:9px 14px;border-radius:9px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--absent)}
+.btn.small{padding:5px 9px;font-size:.8rem}
+.list{margin-top:12px;border-top:1px solid var(--line)}
+.item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.item .name{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.item .sub{color:var(--muted);font-size:.82rem}
+.marks{display:flex;gap:6px;flex-shrink:0}
+.mark{width:44px;height:44px;border-radius:50%;border:2px solid var(--line);background:transparent;color:var(--muted);font:700 1rem var(--head);cursor:pointer}
+.mark[data-v="P"][aria-pressed="true"]{background:var(--present-bg);border-color:var(--present);color:var(--present)}
+.mark[data-v="L"][aria-pressed="true"]{background:var(--late-bg);border-color:var(--late);color:var(--late)}
+.mark[data-v="A"][aria-pressed="true"]{background:var(--absent-bg);border-color:var(--absent);color:var(--absent)}
+.score{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.score input{width:82px;text-align:right}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.stat{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font:700 1.5rem var(--head)}
+.stat span{color:var(--muted);font-size:.82rem}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.92rem}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:600;font-size:.82rem}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;padding:2px 10px;border-radius:99px;font-weight:600;font-size:.8rem}
+.pill.pass{background:var(--present-bg);color:var(--present)}
+.pill.fail{background:var(--absent-bg);color:var(--absent)}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;min-width:60px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.empty{color:var(--muted);padding:18px 0}
+.note{color:var(--muted);font-size:.85rem;margin:8px 0 0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Tutorial Tracker</h1>
+      <p id="subtitle">Attendance, scores and results in one place</p>
+    </div>
+    <button class="btn small" id="themeBtn" type="button">Theme</button>
+  </header>
+  <nav role="tablist" id="tabs">
+    <button role="tab" data-tab="students">Students</button>
+    <button role="tab" data-tab="attendance">Attendance</button>
+    <button role="tab" data-tab="scores">Scores</button>
+    <button role="tab" data-tab="results">Results</button>
+  </nav>
+  <main id="view"></main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+  var KEY = 'tutorial-tracker-v1';
+  var S = load();
+  var ui = { tab:'students', sessionId:null, assessId:null, dataBox:null };
+
+  function blank(){ return { students:[], sessions:[], assessments:[], settings:{ attWeight:10, pass:50 } }; }
+  function load(){
+    try { var r = localStorage.getItem(KEY); if (r) { var d = JSON.parse(r); if (d && d.students) return d; } } catch(e){}
+    return blank();
+  }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+  function uid(){ return Math.random().toString(36).slice(2,9); }
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function $(id){ return document.getElementById(id); }
+  function today(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(function(){t.classList.remove('show');},1800); }
+  function nameOf(id){ var s=S.students.find(function(x){return x.id===id;}); return s?s.name:''; }
+
+  /* ---------- results maths ---------- */
+  function grade(p){ return p>=70?'A':p>=60?'B':p>=50?'C':p>=45?'D':'F'; }
+  function compute(){
+    var totalSessions = S.sessions.length;
+    var totalWeight = S.assessments.reduce(function(a,x){return a+(+x.weight||0);},0);
+    var aw = Math.min(100, Math.max(0, +S.settings.attWeight||0));
+    var rows = S.students.map(function(st){
+      var present=0, late=0, absent=0;
+      S.sessions.forEach(function(se){
+        var m = se.marks[st.id];
+        if(m==='P') present++; else if(m==='L') late++; else if(m==='A') absent++;
+      });
+      var att = totalSessions ? (present+late)/totalSessions*100 : 0;
+      var earned = 0;
+      S.assessments.forEach(function(a){
+        var sc = a.scores[st.id];
+        if(sc!==undefined && sc!=='' && +a.max>0) earned += (+sc/+a.max)*(+a.weight||0);
+      });
+      var acad = totalWeight ? earned/totalWeight*100 : 0;
+      var hasAcad = totalWeight>0, hasAtt = totalSessions>0;
+      var final;
+      if(hasAcad && hasAtt) final = acad*(100-aw)/100 + att*aw/100;
+      else if(hasAcad) final = acad;
+      else final = att;
+      return { id:st.id, name:st.name, present:present, late:late, absent:absent, att:att, acad:acad, final:final, grade:grade(final), pass:final>=(+S.settings.pass||0) };
+    });
+    rows.sort(function(a,b){return b.final-a.final;});
+    rows.forEach(function(r,i){ r.rank = (i>0 && Math.abs(rows[i-1].final-r.final)<0.005) ? rows[i-1].rank : i+1; });
+    return rows;
+  }
+  function f1(n){ return (Math.round(n*10)/10).toFixed(1); }
+
+  /* ---------- views ---------- */
+  function vStudents(){
+    var h = '<section class="panel"><h2>Add a student</h2><div class="row">'
+      +'<label>Full name<input id="stName" autocomplete="off"></label>'
+      +'<label>Email or ID (optional)<input id="stRef" autocomplete="off"></label>'
+      +'<button class="btn primary" data-act="addStudent" type="button">Add student</button></div>'
+      +'<p class="note">Tip: paste several names at once, one per line, in the name box.</p>';
+    if(!S.students.length) h += '<p class="empty">No students yet. Add your first student above, or load sample data to see how it works.</p><button class="btn" data-act="demo" type="button">Load sample data</button>';
+    else {
+      h += '<div class="list">';
+      S.students.forEach(function(s){
+        h += '<div class="item"><div><div class="name">'+esc(s.name)+'</div>'+(s.ref?'<div class="sub">'+esc(s.ref)+'</div>':'')+'</div>'
+          +'<button class="btn small danger" data-act="delStudent" data-id="'+s.id+'" type="button">Remove</button></div>';
+      });
+      h += '</div>';
+    }
+    return h+'</section>';
+  }
+
+  function vAttendance(){
+    var h = '<section class="panel"><h2>New session</h2><div class="row">'
+      +'<label>Date<input type="date" id="seDate" value="'+today()+'"></label>'
+      +'<label>Topic<input id="seTopic" autocomplete="off"></label>'
+      +'<button class="btn primary" data-act="addSession" type="button">Create session</button></div></section>';
+    if(!S.sessions.length) return h+'<section class="panel"><p class="empty">No sessions yet. Create one to start taking attendance.</p></section>';
+    if(!S.sessions.some(function(x){return x.id===ui.sessionId;})) ui.sessionId = S.sessions[S.sessions.length-1].id;
+    var se = S.sessions.find(function(x){return x.id===ui.sessionId;});
+    var opts = S.sessions.map(function(x){return '<option value="'+x.id+'"'+(x.id===se.id?' selected':'')+'>'+esc(x.date)+(x.topic?' - '+esc(x.topic):'')+'</option>';}).join('');
+    var c={P:0,L:0,A:0}; S.students.forEach(function(s){var m=se.marks[s.id]; if(c[m]!==undefined)c[m]++;});
+    h += '<section class="panel"><h2>Register</h2><div class="row"><label>Session<select id="seSel">'+opts+'</select></label>'
+      +'<button class="btn" data-act="allPresent" type="button">Mark all present</button>'
+      +'<button class="btn danger" data-act="delSession" type="button">Delete session</button></div>';
+    h += '<p class="note">Present '+c.P+' | Late '+c.L+' | Absent '+c.A+' | Unmarked '+(S.students.length-c.P-c.L-c.A)+'. Late counts as attended.</p>';
+    if(!S.students.length) h += '<p class="empty">Add students first.</p>';
+    else {
+      h += '<div class="list">';
+      S.students.forEach(function(s){
+        var m = se.marks[s.id];
+        h += '<div class="item"><span class="name">'+esc(s.name)+'</span><div class="marks">'
+          +['P','L','A'].map(function(v){return '<button class="mark" type="button" data-act="mark" data-id="'+s.id+'" data-v="'+v+'" aria-pressed="'+(m===v)+'" aria-label="'+({P:'Present',L:'Late',A:'Absent'}[v])+' for '+esc(s.name)+'">'+v+'</button>';}).join('')
+          +'</div></div>';
+      });
+      h += '</div>';
+    }
+    return h+'</section>';
+  }
+
+  function vScores(){
+    var h = '<section class="panel"><h2>New assessment</h2><div class="row">'
+      +'<label>Name<input id="asName" placeholder="Quiz 1" autocomplete="off"></label>'
+      +'<label>Marks available<input id="asMax" type="number" min="1" value="100"></label>'
+      +'<label>Weight<input id="asWeight" type="number" min="0" value="20"></label>'
+      +'<button class="btn primary" data-act="addAssess" type="button">Add assessment</button></div>'
+      +'<p class="note">Weights are shared out across all assessments, so they do not need to add up to 100.</p></section>';
+    if(!S.assessments.length) return h+'<section class="panel"><p class="empty">No assessments yet. Add a quiz, test or assignment to record scores.</p></section>';
+    if(!S.assessments.some(function(x){return x.id===ui.assessId;})) ui.assessId = S.assessments[S.assessments.length-1].id;
+    var a = S.assessments.find(function(x){return x.id===ui.assessId;});
+    var opts = S.assessments.map(function(x){return '<option value="'+x.id+'"'+(x.id===a.id?' selected':'')+'>'+esc(x.name)+' (weight '+esc(x.weight)+')</option>';}).join('');
+    h += '<section class="panel"><h2>Enter scores</h2><div class="row"><label>Assessment<select id="asSel">'+opts+'</select></label>'
+      +'<button class="btn danger" data-act="delAssess" type="button">Delete assessment</button></div>';
+    if(!S.students.length) h += '<p class="empty">Add students first.</p>';
+    else {
+      h += '<div class="list">';
+      S.students.forEach(function(s){
+        var v = a.scores[s.id]; v = (v===undefined)?'':v;
+        var pct = (v!=='' && +a.max>0) ? f1(+v/+a.max*100)+'%' : '';
+        h += '<div class="item"><span class="name">'+esc(s.name)+'</span><div class="score"><input type="number" inputmode="decimal" min="0" max="'+esc(a.max)+'" data-score="'+s.id+'" value="'+esc(v)+'" aria-label="Score for '+esc(s.name)+'"><span class="sub" style="width:3.2em">'+pct+'</span><span class="sub">/ '+esc(a.max)+'</span></div></div>';
+      });
+      h += '</div>';
+    }
+    return h+'</section>';
+  }
+
+  function vResults(){
+    var rows = compute();
+    var h = '<section class="panel"><h2>Grading rules</h2><div class="row">'
+      +'<label>Attendance share of final mark (%)<input type="number" id="setAtt" min="0" max="100" value="'+esc(S.settings.attWeight)+'"></label>'
+      +'<label>Pass mark (%)<input type="number" id="setPass" min="0" max="100" value="'+esc(S.settings.pass)+'"></label></div>'
+      +'<p class="note">Final mark = academic score x (100 - attendance share) + attendance x attendance share. Grades: A 70+, B 60+, C 50+, D 45+, otherwise F.</p></section>';
+    if(!rows.length) return h+'<section class="panel"><p class="empty">Results appear here once you add students.</p></section>';
+    var avg = rows.reduce(function(a,r){return a+r.final;},0)/rows.length;
+    var passed = rows.filter(function(r){return r.pass;}).length;
+    var avgAtt = rows.reduce(function(a,r){return a+r.att;},0)/rows.length;
+    h += '<section class="panel"><div class="stats">'
+      +'<div class="stat"><b>'+f1(avg)+'%</b><span>Class average</span></div>'
+      +'<div class="stat"><b>'+passed+' / '+rows.length+'</b><span>Passing</span></div>'
+      +'<div class="stat"><b>'+f1(avgAtt)+'%</b><span>Average attendance</span></div>'
+      +'<div class="stat"><b>'+S.sessions.length+'</b><span>Sessions held</span></div></div>';
+    h += '<div class="tablewrap"><table><thead><tr><th class="num">Rank</th><th>Student</th><th class="num">Present</th><th class="num">Late</th><th class="num">Absent</th><th class="num">Attendance</th><th class="num">Academic</th><th class="num">Final</th><th>Grade</th><th>Status</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      h += '<tr><td class="num">'+r.rank+'</td><td>'+esc(r.name)+'</td><td class="num">'+r.present+'</td><td class="num">'+r.late+'</td><td class="num">'+r.absent+'</td>'
+        +'<td class="num">'+f1(r.att)+'%</td><td class="num">'+f1(r.acad)+'%</td><td class="num"><b>'+f1(r.final)+'%</b></td><td><b>'+r.grade+'</b></td>'
+        +'<td><span class="pill '+(r.pass?'pass':'fail')+'">'+(r.pass?'Pass':'Fail')+'</span></td></tr>';
+    });
+    h += '</tbody></table></div>'
+      +'<div class="row" style="margin-top:14px"><button class="btn" data-act="showCsv" type="button">Copy results as CSV</button>'
+      +'<button class="btn" data-act="showJson" type="button">Back up data</button>'
+      +'<button class="btn" data-act="showImport" type="button">Restore data</button>'
+      +'<button class="btn danger" data-act="reset" type="button">Clear everything</button></div>';
+    if(ui.dataBox){
+      h += '<div style="margin-top:12px"><textarea id="dataBox" '+(ui.dataBox.mode==='import'?'placeholder="Paste a backup here"':'readonly')+'>'+esc(ui.dataBox.text||'')+'</textarea>'
+        +'<div class="row" style="margin-top:8px">'+(ui.dataBox.mode==='import'?'<button class="btn primary" data-act="doImport" type="button">Restore from backup</button>':'<button class="btn primary" data-act="copyBox" type="button">Copy to clipboard</button>')+'</div></div>';
+    }
+    return h+'</section>';
+  }
+
+  function render(keepFocus){
+    var tabs = document.querySelectorAll('#tabs button');
+    for(var i=0;i<tabs.length;i++) tabs[i].setAttribute('aria-selected', tabs[i].dataset.tab===ui.tab);
+    var v = ui.tab==='students'?vStudents():ui.tab==='attendance'?vAttendance():ui.tab==='scores'?vScores():vResults();
+    $('view').innerHTML = v;
+    $('subtitle').textContent = S.students.length+' students | '+S.sessions.length+' sessions | '+S.assessments.length+' assessments';
+  }
+
+  /* ---------- actions ---------- */
+  function csv(){
+    var rows = compute();
+    var out = [['Rank','Student','Present','Late','Absent','Attendance %','Academic %','Final %','Grade','Status']];
+    rows.forEach(function(r){ out.push([r.rank,r.name,r.present,r.late,r.absent,f1(r.att),f1(r.acad),f1(r.final),r.grade,r.pass?'Pass':'Fail']); });
+    return out.map(function(r){return r.map(function(c){c=String(c); return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}).join(',');}).join('\n');
+  }
+  function copyText(t){
+    function fallback(){ var b=$('dataBox'); if(b){ b.focus(); b.select(); try{ document.execCommand('copy'); toast('Copied'); }catch(e){ toast('Select the text and copy it'); } } }
+    try { if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(function(){toast('Copied');}, fallback); return; } } catch(e){}
+    fallback();
+  }
+  function demo(){
+    var names=['Amina Yusuf','Daniel Okoro','Grace Mensah','Ibrahim Bello','Linda Eze','Samuel Adeyemi'];
+    S = blank();
+    S.students = names.map(function(n){return {id:uid(),name:n,ref:''};});
+    var base = new Date(); 
+    for(var i=0;i<4;i++){
+      var d=new Date(base.getTime()-(3-i)*7*86400000);
+      var ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      var se={id:uid(),date:ds,topic:'Week '+(i+1),marks:{}};
+      S.students.forEach(function(s){ var r=Math.random(); se.marks[s.id]=r<.75?'P':r<.88?'L':'A'; });
+      S.sessions.push(se);
+    }
+    [['Quiz 1',20,20],['Test 1',50,30],['Assignment',100,50]].forEach(function(a){
+      var as={id:uid(),name:a[0],max:a[1],weight:a[2],scores:{}};
+      S.students.forEach(function(s){ as.scores[s.id]=Math.round(a[1]*(0.4+Math.random()*0.55)); });
+      S.assessments.push(as);
+    });
+    save(); ui.tab='results'; render(); toast('Sample data loaded');
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target.closest('[data-act],[data-tab]'); if(!t) return;
+    if(t.dataset.tab){ ui.tab=t.dataset.tab; ui.dataBox=null; render(); window.scrollTo(0,0); return; }
+    var act = t.dataset.act;
+    if(act==='addStudent'){
+      var raw = $('stName').value.split('\n').map(function(x){return x.trim();}).filter(Boolean);
+      if(!raw.length){ toast('Enter a name first'); return; }
+      var ref = $('stRef').value.trim();
+      raw.forEach(function(n){ S.students.push({id:uid(),name:n,ref:raw.length===1?ref:''}); });
+      save(); render(); toast(raw.length+' added');
+    } else if(act==='delStudent'){
+      var nm = nameOf(t.dataset.id);
+      if(!confirm('Remove '+nm+' and all their records?')) return;
+      S.students = S.students.filter(function(s){return s.id!==t.dataset.id;});
+      S.sessions.forEach(function(se){ delete se.marks[t.dataset.id]; });
+      S.assessments.forEach(function(a){ delete a.scores[t.dataset.id]; });
+      save(); render();
+    } else if(act==='addSession'){
+      var d=$('seDate').value; if(!d){ toast('Pick a date'); return; }
+      var se={id:uid(),date:d,topic:$('seTopic').value.trim(),marks:{}};
+      S.sessions.push(se); S.sessions.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
+      ui.sessionId=se.id; save(); render(); toast('Session created');
+    } else if(act==='mark'){
+      var se2=S.sessions.find(function(x){return x.id===ui.sessionId;});
+      if(se2.marks[t.dataset.id]===t.dataset.v) delete se2.marks[t.dataset.id]; else se2.marks[t.dataset.id]=t.dataset.v;
+      save(); var y=window.scrollY; render(); window.scrollTo(0,y);
+    } else if(act==='allPresent'){
+      var se3=S.sessions.find(function(x){return x.id===ui.sessionId;});
+      S.students.forEach(function(s){ se3.marks[s.id]='P'; }); save(); render();
+    } else if(act==='delSession'){
+      if(!confirm('Delete this session?')) return;
+      S.sessions = S.sessions.filter(function(x){return x.id!==ui.sessionId;}); save(); render();
+    } else if(act==='addAssess'){
+      var n=$('asName').value.trim(), mx=+$('asMax').value, w=+$('asWeight').value;
+      if(!n){ toast('Name the assessment'); return; }
+      if(!(mx>0)){ toast('Marks available must be above 0'); return; }
+      var as={id:uid(),name:n,max:mx,weight:w>=0?w:0,scores:{}};
+      S.assessments.push(as); ui.assessId=as.id; save(); render(); toast('Assessment added');
+    } else if(act==='delAssess'){
+      if(!confirm('Delete this assessment and its scores?')) return;
+      S.assessments = S.assessments.filter(function(x){return x.id!==ui.assessId;}); save(); render();
+    } else if(act==='demo'){ demo();
+    } else if(act==='showCsv'){ ui.dataBox={mode:'csv',text:csv()}; render();
+    } else if(act==='showJson'){ ui.dataBox={mode:'json',text:JSON.stringify(S)}; render();
+    } else if(act==='showImport'){ ui.dataBox={mode:'import',text:''}; render();
+    } else if(act==='copyBox'){ copyText($('dataBox').value);
+    } else if(act==='doImport'){
+      try{
+        var d2=JSON.parse($('dataBox').value);
+        if(!d2||!Array.isArray(d2.students)||!Array.isArray(d2.sessions)||!Array.isArray(d2.assessments)) throw new Error('bad');
+        d2.settings = d2.settings || {attWeight:10,pass:50};
+        S=d2; save(); ui.dataBox=null; render(); toast('Data restored');
+      }catch(err){ toast('That backup could not be read'); }
+    } else if(act==='reset'){
+      if(!confirm('Delete all students, sessions and scores? This cannot be undone.')) return;
+      S=blank(); save(); ui.dataBox=null; render();
+    }
+  });
+
+  document.addEventListener('change', function(e){
+    var t=e.target;
+    if(t.id==='seSel'){ ui.sessionId=t.value; render(); }
+    else if(t.id==='asSel'){ ui.assessId=t.value; render(); }
+    else if(t.dataset && t.dataset.score){
+      var a=S.assessments.find(function(x){return x.id===ui.assessId;});
+      if(t.value===''){ delete a.scores[t.dataset.score]; }
+      else {
+        var v=+t.value; if(v<0)v=0; if(v>+a.max){ v=+a.max; toast('Capped at '+a.max); }
+        a.scores[t.dataset.score]=v;
+      }
+      save(); render();
+    }
+    else if(t.id==='setAtt'){ S.settings.attWeight=Math.min(100,Math.max(0,+t.value||0)); save(); render(); }
+    else if(t.id==='setPass'){ S.settings.pass=Math.min(100,Math.max(0,+t.value||0)); save(); render(); }
+  });
+
+  $('themeBtn').addEventListener('click', function(){
+    var r=document.documentElement;
+    var dark = r.getAttribute('data-theme')==='dark' || (!r.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    r.setAttribute('data-theme', dark?'light':'dark');
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
